@@ -52,8 +52,8 @@ if __name__ == '__main__':
                            'device_id': str(dev_id),
                            'data': dataset.to_dict(orient='records')})
 
-            result.append({'type': 'summary',
-                           'data': data[data.columns[summary_index:]].to_dict(orient='records')})
+        result.append({'type': 'summary',
+                       'data': data[data.columns[summary_index:]].to_dict(orient='records')})
 
     file_path = path.join(CURRENT_PATH, 'data.json')
     with open(file_path, 'w') as f:
