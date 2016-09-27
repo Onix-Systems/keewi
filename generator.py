@@ -2,6 +2,7 @@
 import urllib.request
 from io import StringIO
 from os import path
+import json
 from pandas import DataFrame
 import settings
 
@@ -10,6 +11,7 @@ CURRENT_PATH = path.dirname(path.realpath(__file__))
 
 if __name__ == '__main__':
     csv_url = EXPORT_PATTERN.format(settings.GOOGLE_SPREADSHEET_ID)
+    result = []
 
     with urllib.request.urlopen(csv_url) as response:
         csv = response.read()
@@ -38,7 +40,7 @@ if __name__ == '__main__':
 
         for x in range(devices):
             start_col_index = x * 6
-            data_list.append(DataFrame(data[data.columns[start_col_index:start_col_index+6]]))
+            data_list.append(DataFrame(data[data.columns[start_col_index:start_col_index + 6]]))
 
         orig_header = data_list[0].columns
         for dataset in data_list[1:]:
@@ -46,8 +48,13 @@ if __name__ == '__main__':
 
         for dataset in data_list:
             dev_id = dataset.iloc[0, 0]
-            dataset.to_json(path.join(CURRENT_PATH, 'data', 'data_{}.json'.format(dev_id)), orient='records')
+            result.append({'type': 'device_data',
+                           'device_id': str(dev_id),
+                           'data': dataset.to_dict(orient='records')})
 
-        summary = data[data.columns[summary_index:]]
-        summary.to_json(path.join(CURRENT_PATH, 'data', 'summary.json'), orient='records')
+            result.append({'type': 'summary',
+                           'data': data[data.columns[summary_index:]].to_dict(orient='records')})
 
+    file_path = path.join(CURRENT_PATH, 'data.json')
+    with open(file_path, 'w') as f:
+        json.dump(result, f)
