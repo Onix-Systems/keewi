@@ -1,4 +1,21 @@
 $(function () {
+    var margin = {top: 30, right: 20, bottom: 30, left: 50};
+    var width = 500 - margin.left - margin.right;
+    var height = 300 - margin.top - margin.bottom;
+    var x = d3.time.scale().range([0, width]);
+    var y = d3.scale.linear().range([height, 0]);
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .ticks(5);
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(5);
+    var line = d3.svg.line()
+            .x(function(d) { return x(d.time_stamp); })
+            .y(function(d) { return y(d[core.type]); });
+    var type;
     var core = {
         build: function (data) {
             if (data.device_id) {
@@ -9,40 +26,23 @@ $(function () {
             data.data.forEach(function (element) {
                 element.time_stamp = new Date(element.time_stamp);
             });
-            var name = "kWx - id " + data.device_id;
-            var margin = {top: 30, right: 20, bottom: 30, left: 50},
-                width = 500 - margin.left - margin.right,
-                height = 300 - margin.top - margin.bottom,
-                x = d3.time.scale().range([0, width]),
-                y = d3.scale.linear().range([height, 0]);
-            var xAxis = d3.svg.axis()
-                .scale(x)
-                .orient("bottom")
-                .ticks(5);
-            var yAxis = d3.svg.axis()
-                .scale(y)
-                .orient("left")
-                .ticks(5);
-            var line = d3.svg.line()
-                .x(function(d) { return x(d.time_stamp); })
-                .y(function(d) { return y(d.kWh); });
-            var area = d3.svg.area()
-                .x(function(d) { return x(d.time_stamp); })
-                .y0(height)
-                .y1(function(d) { return y(d.kWh); });
+            this.createChart(data.data, 'kWh', data.device_id);
+            this.createChart(data.data, 'Power', data.device_id);
+        },
+        createChart: function (data, type, id) {
             var svg = d3.select('.main-container').append("svg")
                 .attr("class", "chart-body")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-            x.domain(d3.extent(data.data, function(d) { return d.time_stamp; }));
-            y.domain(d3.extent(data.data, function(d) { return d.kWh; }));
+            core.type = type;
+            x.domain(d3.extent(data, function(d) { return d.time_stamp; }));
+            y.domain(d3.extent(data, function(d) { return d[core.type]; }));
 
             core.xLine(svg, xAxis, height);
-            core.yLine(svg, yAxis, name);
-            core.chartLine(data.data, svg, line);
+            core.yLine(svg, yAxis, type + ' - ' + id);
+            core.chartLine(data, svg, line);
         },
         xLine: function (svg, xAxis, height) {
             svg.append("g")
